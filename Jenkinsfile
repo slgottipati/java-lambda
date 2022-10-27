@@ -55,9 +55,10 @@ pipeline {
                     echo "JARNAME: ${JARNAME}"
                     sh 'pwd'
                     // sh "zip ${ARTIFACTID}-${VERSION}.zip 'target/${JARNAME}'"            
-
-                    sh "aws configure set aws_access_key_id credentials('aws_access_key')"
-                    sh "aws configure set aws_secret_access_key credentials('aws_secret_key')"
+                    aws_access_key = credentials('aws_access_key')
+                    aws_secret_key = credentials('aws_secret_key')
+                    sh "aws configure set aws_access_key_id $aws_access_key"
+                    sh "aws configure set aws_secret_access_key $aws_secret_key"
                     sh 'aws configure set region us-east-1' 
                     sh "aws s3 cp target/${JARNAME} s3://bermtec228/lambda-test/"
 
