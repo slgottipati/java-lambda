@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent none
 
      options {
         //Disable concurrentbuilds for the same job
@@ -11,12 +11,12 @@ pipeline {
         
     }
 
-    environment {
-        AWS_ACCESS_KEY = credentials('aws_access_key')
-        AWS_SECRET_KEY = credentials('aws_secret_key')
-        ARTIFACTID = readMavenPom().getArtifactId()
-        VERSION = readMavenPom().getVersion()
-    }
+    // environment {
+    //     AWS_ACCESS_KEY = credentials('aws_access_key')
+    //     AWS_SECRET_KEY = credentials('aws_secret_key')
+    //     ARTIFACTID = readMavenPom().getArtifactId()
+    //     VERSION = readMavenPom().getVersion()
+    // }
 
     stages {
         stage('Build Lambda') {
@@ -47,6 +47,8 @@ pipeline {
             steps {
                 script {
                     echo 'Deploy to QA'
+                    ARTIFACTID = readMavenPom().getArtifactId()
+                    VERSION = readMavenPom().getVersion()
                     echo "ARTIFACTID: ${ARTIFACTID}"
                     echo "VERSION: ${VERSION}"
                     JARNAME = ARTIFACTID+'-'+VERSION+'.jar'
@@ -54,8 +56,8 @@ pipeline {
                     sh 'pwd'
                     // sh "zip ${ARTIFACTID}-${VERSION}.zip 'target/${JARNAME}'"            
 
-                    sh 'aws configure set aws_access_key_id $AWS_ACCESS_KEY'
-                    sh 'aws configure set aws_secret_access_key $AWS_SECRET_KEY'
+                    sh "aws configure set aws_access_key_id credentials('aws_access_key')"
+                    sh "aws configure set aws_secret_access_key credentials('aws_secret_key')"
                     sh 'aws configure set region us-east-1' 
                     sh "aws s3 cp target/${JARNAME} s3://bermtec228/lambda-test/"
 
@@ -87,6 +89,8 @@ pipeline {
                 script {
                     if (env.BRANCH_NAME == "master") {
                         echo 'Deploy to Prod'
+                        ARTIFACTID = readMavenPom().getArtifactId()
+                        VERSION = readMavenPom().getVersion()
                         echo "ARTIFACTID: ${ARTIFACTID}"
                         echo "VERSION: ${VERSION}"
                         JARNAME = ARTIFACTID+'-'+VERSION+'.jar'
@@ -101,21 +105,6 @@ pipeline {
             }
         }
 
-    }
-
-    post {
-      failure {
-        echo 'failed'
-             mail to: 'teambermtec@gmail.com',
-             subject: "Failed Pipeline: ${currentBuild.fullDisplayName}",
-             body: "Something is wrong with ${env.BUILD_NUMBER}"
-      }
-      success {
-        echo 'Success'
-      }
-      aborted {
-        echo 'aborted'
-      }
     }
 }
 
