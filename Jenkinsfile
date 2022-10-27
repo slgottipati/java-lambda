@@ -1,5 +1,5 @@
 pipeline {
-    agent none
+    agent any
 
      options {
         //Disable concurrentbuilds for the same job
@@ -11,12 +11,12 @@ pipeline {
         
     }
 
-    // environment {
-    //     AWS_ACCESS_KEY = credentials('aws_access_key')
-    //     AWS_SECRET_KEY = credentials('aws_secret_key')
-    //     ARTIFACTID = readMavenPom().getArtifactId()
-    //     VERSION = readMavenPom().getVersion()
-    // }
+    environment {
+        AWS_ACCESS_KEY = credentials('aws_access_key')
+        AWS_SECRET_KEY = credentials('aws_secret_key')
+        ARTIFACTID = readMavenPom().getArtifactId()
+        VERSION = readMavenPom().getVersion()
+    }
 
     stages {
         stage('Build Lambda') {
@@ -54,11 +54,9 @@ pipeline {
                     JARNAME = ARTIFACTID+'-'+VERSION+'.jar'
                     echo "JARNAME: ${JARNAME}"
                     sh 'pwd'
-                    // sh "zip ${ARTIFACTID}-${VERSION}.zip 'target/${JARNAME}'"            
-                    aws_access_key = credentials('aws_access_key')
-                    aws_secret_key = credentials('aws_secret_key')
-                    sh "aws configure set aws_access_key_id $aws_access_key"
-                    sh "aws configure set aws_secret_access_key $aws_secret_key"
+                    // sh "zip ${ARTIFACTID}-${VERSION}.zip 'target/${JARNAME}'"
+                    sh "aws configure set aws_access_key_id $AWS_ACCESS_KEY"
+                    sh "aws configure set aws_secret_access_key $AWS_SECRET_KEY"
                     sh 'aws configure set region us-east-1' 
                     sh "aws s3 cp target/${JARNAME} s3://bermtec228/lambda-test/"
 
@@ -75,7 +73,7 @@ pipeline {
                 echo 'Release to Prod'
                 script {
                     if (env.BRANCH_NAME == "master") {
-                        timeout(time: 10, unit: 'MINUTES') {
+                        timeout(time: 5, unit: 'MINUTES') {
                             input('Proceed for Prod  ?')
                         }
                     }
